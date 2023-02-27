@@ -58,7 +58,11 @@ def services_info(link: str):
                 price = item.find(class_=re.compile('pull-right price')).getText().strip()
             else:
                 price = 'по запросу'
-            result.append(f"{name} {price}".replace(u'\xa0', ' ').replace(u'\u202F', ' '))
+            # result.append(f"{name} {price}".replace(u'\xa0', ' ').replace(u'\u202F', ' '))
+            result.append({
+                "name": name.replace(u'\xa0', ' ').replace(u'\u202F', ' '),
+                "price": price.replace(u'\xa0', ' ').replace(u'\u202F', ' ')
+            })
         return result
     except:
         pass
@@ -115,6 +119,11 @@ def get_clinic_info(link: str):
             '            ', ' ').replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\'', '\"')
     except:
         about = ''
+
+    try:
+        telephone = soup.find('div', class_=re.compile('clinic-contacts')).text.strip()
+    except:
+        telephone = ''
 
     try:
         rating = float(soup.find('div', itemprop=re.compile('rating')).text.strip())
@@ -203,6 +212,7 @@ def get_clinic_info(link: str):
             'name': name,
             'address': address,
             'metro': metro,
+            'telephone': telephone,
             'about': about,
             'schedule': schedule,
             'rating': rating,
