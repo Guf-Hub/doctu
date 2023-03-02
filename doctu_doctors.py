@@ -44,8 +44,8 @@ def get_doctors_info(link: str):
             city = ''
 
         try:
-            experience = block.find('div', class_='experience').text.strip().replace(u'\xa0', ' ').replace(u'\u202F',
-                                                                                                           ' ')
+            experience = block.find('div', class_='experience').text.strip() \
+                .replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('  ', ' ')
         except:
             experience = ''
 
@@ -55,8 +55,8 @@ def get_doctors_info(link: str):
             specialty = ''
 
         try:
-            intro = soup.find('p', class_=re.compile('doc-intro')).text.strip().replace(u'\xa0', ' ').replace(u'\u202F',
-                                                                                                              ' ')
+            intro = soup.find('p', class_=re.compile('doc-intro')).text.strip() \
+                .replace(u'\xa0', ' ').replace(u'\u202F', ' ')
         except:
             intro = ''
 
@@ -69,8 +69,7 @@ def get_doctors_info(link: str):
         if block1:
             try:
                 education = [b.getText().strip().replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\n', ' - ') for
-                             b in
-                             block1.find_all('div', class_=re.compile("school$"))]
+                             b in block1.find_all('div', class_=re.compile("school$"))]
                 work = [b.getText().strip().replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\n', ' - ') for b in
                         block1.find_all('div', class_='school work')]
                 education = [x for x in education if x not in work]
@@ -79,9 +78,8 @@ def get_doctors_info(link: str):
                 work = []
 
             try:
-                training = [b.getText().replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\n', ' ').strip() for b
-                            in
-                            block1.find_all('div', class_='training')]
+                training = [b.getText().replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\n', ' ')
+                                .strip() for b in block1.find_all('div', class_='training')]
             except:
                 training = []
 
@@ -93,10 +91,8 @@ def get_doctors_info(link: str):
         skills = address = reviews = None
         if block2:
             try:
-                # skills = [f'{item}\n'.join(
-                #     [i.text.replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace(';', '.').capitalize() for i in
-                #      block2.findAll('li')]) for item in block2.findAll('ul')]
-                skills = [i.text.replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace(';', '.').capitalize() for i in block2.findAll('li')]
+                skills = [i.text.replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace(';', '.').capitalize() for i in
+                          block2.findAll('li')]
             except:
                 skills = []
 
@@ -112,28 +108,27 @@ def get_doctors_info(link: str):
             try:
                 reviews = [re.sub('\n+', '\n', ' * '.join(
                     b.text.replace(u'\xa0', ' ').replace(u'\u202F', ' ').strip().split('\n\n\n\n\n\n\n'))).split(' * ')
-                           for
-                           b in block2.find_all('section', class_='reviews-list')][0]
-                reviews = re.sub('\n | \n', '\n', re.sub('г.\n\d+', 'г.', re.sub(' +', ' ',
-                                                                                 ' * '.join(reviews).replace(
-                                                                                     '\nПациент',
-                                                                                     'Пациент')))).split(
-                    ' * ')
+                           for b in block2.find_all('section', class_='reviews-list')][0]
+                reviews = re.sub('\n | \n', '\n',
+                                 re.sub('г.\n\d+', 'г.', re.sub(' +', ' ', ' * '.join(reviews)
+                                                                .replace('\nПациент', 'Пациент')))).split(' * ')
             except:
                 reviews = []
 
-        data = {'link': link,
-                'name': name,
-                'experience': experience,
-                'city': city,
-                'specialty': specialty,
-                'intro': intro,
-                'education': education,
-                'training': training,
-                'work': work,
-                'skills': skills,
-                'address': address,
-                'reviews': reviews, }
+        data = {
+            'link': link,
+            'name': name,
+            'experience': experience,
+            'city': city,
+            'specialty': specialty,
+            'intro': intro,
+            'education': education,
+            'training': training,
+            'work': work,
+            'skills': skills,
+            'address': address,
+            'reviews': reviews,
+        }
 
         return data
 
@@ -150,7 +145,7 @@ def doctors(get_links: bool = False):
 
     if get_links:
         print(f'\r[INFO] Получаем количество ссылок...')
-        count = links_count('https://doctu.ru/msk/doctors', doctors=True)
+        count = links_count('https://doctu.ru/msk/doctors', doc_json=True)
         for i in tqdm(range(1, count, 1)):
             link = f'https://doctu.ru/msk/doctors?page={i}'
             doctors_links(link)
@@ -168,4 +163,4 @@ def doctors(get_links: bool = False):
 
 
 if __name__ == "__main__":
-    doctors(False)
+    doctors(True)

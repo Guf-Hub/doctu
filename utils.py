@@ -81,25 +81,32 @@ def get_text(link: str) -> str:
         time.sleep(5)
 
 
-def links_count(link: str, card_in_page: int = 20, doctors: bool = False):
+def links_count(link: str, card_in_page: int = 20, doctors: bool = False, doc_json: bool = False):
     try:
         session = set_session()
-        req = session.get(url=link, timeout=100, allow_redirects=True, headers=headers)
+        if doc_json:
+            url = 'https://api.doctu.ru/search/doctors?fullPath=/msk/doctors&path=/msk/doctors&query=%7B%7D'
+            response = session.post(url=url, timeout=100, allow_redirects=True, headers=headers)
+            if 200 <= response.status_code <= 299:
+                json_data = response.json().get('result')
+                return json_data.get('meta').get('lastPage') + 1
+        else:
+            req = session.get(url=link, timeout=100, allow_redirects=True, headers=headers)
 
-        if 200 <= req.status_code <= 299:
-            if doctors:
-                i = 2
-                while True:
-                    next_page = f"{link}?page={i}"
-                    req = session.get(url=next_page, timeout=100, allow_redirects=True, headers=headers)
-                    if 200 <= req.status_code <= 299:
-                        i += 1
-                    else:
-                        break
-                return i
-            else:
-                soup = BeautifulSoup(req.text, 'lxml')
-                return math.ceil(int(soup.find('span', class_='green').text.strip()) / card_in_page) + 1
+            if 200 <= req.status_code <= 299:
+                if doctors:
+                    i = 2
+                    while True:
+                        next_page = f"{link}?page={i}"
+                        req = session.get(url=next_page, timeout=100, allow_redirects=True, headers=headers)
+                        if 200 <= req.status_code <= 299:
+                            i += 1
+                        else:
+                            break
+                    return i
+                else:
+                    soup = BeautifulSoup(req.text, 'lxml')
+                    return math.ceil(int(soup.find('span', class_='green').text.strip()) / card_in_page) + 1
     except requests.exceptions.ReadTimeout:
         print('\n Подключение к серверу........ \n')
         time.sleep(5)
