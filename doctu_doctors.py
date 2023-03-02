@@ -30,10 +30,12 @@ def get_doctors_info(link: str):
     try:
         block = soup.find('div', class_=re.compile('doc-name'))
         name = block.find('h1').text.strip()
+        experience = block.find('div', class_='experience').text.strip().replace(u'\xa0', ' ').replace(u'\u202F', ' ')
         city = block.find('div', class_='note').text.strip()
     except:
         name = ''
         city = ''
+        experience = ''
 
     try:
         specialty = soup.find('div', class_=re.compile('doc-name')).find('div', class_=re.compile(
@@ -82,6 +84,7 @@ def get_doctors_info(link: str):
 
     data = {'link': link,
             'name': name,
+            'experience': experience,
             'city': city,
             'specialty': specialty,
             'intro': intro.replace(u'\xa0', ' ').replace(u'\u202F', ' '),
@@ -125,4 +128,4 @@ def doctors(get_links: bool = False):
 
 
 if __name__ == "__main__":
-    doctors(True)
+    doctors(False)
