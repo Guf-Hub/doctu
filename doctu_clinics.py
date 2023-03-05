@@ -92,145 +92,149 @@ def reviews_info(link: str):
 
 def get_clinic_info(link: str):
     response_text = get_text(link)
-    soup = BeautifulSoup(response_text, "lxml")
-
     try:
-        name = ' '.join(soup.find('h1', itemprop=re.compile('name')).text.strip().split(' ')[:-2]).strip()
+        soup = BeautifulSoup(response_text, "lxml")
+
+        try:
+            name = ' '.join(soup.find('h1', itemprop=re.compile('name')).text.strip().split(' ')[:-2]).strip()
+        except:
+            name = ''
+
+        try:
+            city = soup.find('h1', itemprop=re.compile('name')).text.strip().split(' ')[-1]
+            street = soup.find('span', itemprop=re.compile('streetAddress')).text.strip()
+            if city == 'Москва':
+                address = f"{city} {street}"
+            else:
+                address = f"{street}"
+        except:
+            address = ''
+
+        try:
+            metro = re.sub('\n+', '\n', soup.find('div', class_=re.compile('metro')).text.strip()).split('\n')
+        except:
+            metro = []
+
+        try:
+            about = re.sub('\n+', '\n', soup.find('div', class_=re.compile('col-xs-8')).text.strip()).replace(
+                '            ', ' ').replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\'', '\"')
+        except:
+            about = ''
+
+        try:
+            telephone = soup.find('div', class_=re.compile('clinic-contacts')).text.strip()
+        except:
+            telephone = ''
+
+        try:
+            rating = float(soup.find('div', itemprop=re.compile('rating')).text.strip())
+        except:
+            rating = 0
+
+        try:
+            category_main = soup.find('ol', class_=re.compile('breadcrumb')).find_all('li')[-2].text.strip()
+        except:
+            category_main = ''
+
+        try:
+            left_block = soup.find('div', class_=re.compile('col-xs-4 col-left-border')) \
+                .find_all('div', class_='additional-info-block')
+
+            category_all = chief_physician = schedule = None
+            for item in left_block:
+                text = item.text.strip()
+                if text.find('Категория') != -1:
+                    category_all = text.split('Категория')[-1].strip()
+                elif text.find('Главный врач') != -1:
+                    chief_physician = text.split('Главный врач')[-1].strip()
+                elif text.find('пн-пт') != -1 or text.find('круглосуточно') != -1:
+                    schedule = text.replace('\n', ' ').split('   ')
+        except:
+            category_all = ''
+            chief_physician = ''
+            schedule = []
+
+        try:
+            licenses_link = soup.find_all('div', class_='licenceImg')
+            licenses = [f"https://doctu.ru{p.find('a').get('href')}" for p in licenses_link]
+        except:
+            licenses = []
+
+        try:
+            avatar = f"https://doctu.ru{soup.find('div', class_='clinic-avatar').find('img').get('src')}"
+        except:
+            avatar = ''
+
+        try:
+            photo = soup.find('div', class_='row row-photo').find_all('div', class_='col-xs-2 galleryImg')
+            clinic_photo = [f"https://doctu.ru{p.find('a').get('href')}" for p in photo]
+
+        except:
+            clinic_photo = []
+
+        try:
+            site = f"https://doctu.ru{soup.find('a', class_=re.compile('btn btn-primary site')).get('href')}"
+        except:
+            site = ''
+
+        try:
+            vk = youtube = None
+            network_links = soup.find_all('a', class_=re.compile('spec-link site'))
+            for item in network_links:
+                item = item.get('href')
+                if item.split('/')[-1] == 'vk':
+                    vk = f"https://doctu.ru{item}"
+                elif item.split('/')[-1] == 'youtube':
+                    youtube = f"https://doctu.ru{item}"
+        except:
+            vk = ''
+            youtube = ''
+
+        doctors = services = reviews = None
+        for item in soup.find('ul', class_=re.compile('nav nav-tabs')).find_all('li'):
+            nav_link = item.find('a').get('href')
+            if nav_link and nav_link.split("/")[-1] == "doctors":
+                try:
+                    doctors = doctors_info(f"https://doctu.ru{nav_link}")
+                except:
+                    doctors = []
+            elif nav_link and nav_link.split("/")[-1] == "services":
+                try:
+                    services = services_info(f"https://doctu.ru{nav_link}")
+                except:
+                    services = []
+            elif nav_link and nav_link.split("/")[-1] == "reviews":
+                try:
+                    reviews = reviews_info(f"https://doctu.ru{nav_link}")
+                except:
+                    reviews = []
+
+        data = {'link': link,
+                'name': name,
+                'address': address,
+                'metro': metro,
+                'telephone': telephone,
+                'about': about,
+                'schedule': schedule,
+                'rating': rating,
+                'category_main': category_main,
+                'category_all': category_all,
+                'licenses': licenses,
+                'avatar': avatar,
+                'clinic_photo': clinic_photo,
+                'chief_physician': chief_physician,
+                'site': site,
+                'vk': vk,
+                'youtube': youtube,
+                'doctors': doctors,
+                'services': services,
+                'reviews': reviews,
+                }
+
+        return data
     except:
-        name = ''
-
-    try:
-        city = soup.find('h1', itemprop=re.compile('name')).text.strip().split(' ')[-1]
-        street = soup.find('span', itemprop=re.compile('streetAddress')).text.strip()
-        if city == 'Москва':
-            address = f"{city} {street}"
-        else:
-            address = f"{street}"
-    except:
-        address = ''
-
-    try:
-        metro = re.sub('\n+', '\n', soup.find('div', class_=re.compile('metro')).text.strip()).split('\n')
-    except:
-        metro = []
-
-    try:
-        about = re.sub('\n+', '\n', soup.find('div', class_=re.compile('col-xs-8')).text.strip()).replace(
-            '            ', ' ').replace(u'\xa0', ' ').replace(u'\u202F', ' ').replace('\'', '\"')
-    except:
-        about = ''
-
-    try:
-        telephone = soup.find('div', class_=re.compile('clinic-contacts')).text.strip()
-    except:
-        telephone = ''
-
-    try:
-        rating = float(soup.find('div', itemprop=re.compile('rating')).text.strip())
-    except:
-        rating = 0
-
-    try:
-        category_main = soup.find('ol', class_=re.compile('breadcrumb')).find_all('li')[-2].text.strip()
-    except:
-        category_main = ''
-
-    try:
-        left_block = soup.find('div', class_=re.compile('col-xs-4 col-left-border')) \
-            .find_all('div', class_='additional-info-block')
-
-        category_all = chief_physician = schedule = None
-        for item in left_block:
-            text = item.text.strip()
-            if text.find('Категория') != -1:
-                category_all = text.split('Категория')[-1].strip()
-            elif text.find('Главный врач') != -1:
-                chief_physician = text.split('Главный врач')[-1].strip()
-            elif text.find('пн-пт') != -1 or text.find('круглосуточно') != -1:
-                schedule = text.replace('\n', ' ').split('   ')
-    except:
-        category_all = ''
-        chief_physician = ''
-        schedule = []
-
-    try:
-        licenses_link = soup.find_all('div', class_='licenceImg')
-        licenses = [f"https://doctu.ru{p.find('a').get('href')}" for p in licenses_link]
-    except:
-        licenses = []
-
-    try:
-        avatar = f"https://doctu.ru{soup.find('div', class_='clinic-avatar').find('img').get('src')}"
-    except:
-        avatar = ''
-
-    try:
-        photo = soup.find('div', class_='row row-photo').find_all('div', class_='col-xs-2 galleryImg')
-        clinic_photo = [f"https://doctu.ru{p.find('a').get('href')}" for p in photo]
-
-    except:
-        clinic_photo = []
-
-    try:
-        site = f"https://doctu.ru{soup.find('a', class_=re.compile('btn btn-primary site')).get('href')}"
-    except:
-        site = ''
-
-    try:
-        vk = youtube = None
-        network_links = soup.find_all('a', class_=re.compile('spec-link site'))
-        for item in network_links:
-            item = item.get('href')
-            if item.split('/')[-1] == 'vk':
-                vk = f"https://doctu.ru{item}"
-            elif item.split('/')[-1] == 'youtube':
-                youtube = f"https://doctu.ru{item}"
-    except:
-        vk = ''
-        youtube = ''
-
-    doctors = services = reviews = None
-    for item in soup.find('ul', class_=re.compile('nav nav-tabs')).find_all('li'):
-        nav_link = item.find('a').get('href')
-        if nav_link and nav_link.split("/")[-1] == "doctors":
-            try:
-                doctors = doctors_info(f"https://doctu.ru{nav_link}")
-            except:
-                doctors = []
-        elif nav_link and nav_link.split("/")[-1] == "services":
-            try:
-                services = services_info(f"https://doctu.ru{nav_link}")
-            except:
-                services = []
-        elif nav_link and nav_link.split("/")[-1] == "reviews":
-            try:
-                reviews = reviews_info(f"https://doctu.ru{nav_link}")
-            except:
-                reviews = []
-
-    data = {'link': link,
-            'name': name,
-            'address': address,
-            'metro': metro,
-            'telephone': telephone,
-            'about': about,
-            'schedule': schedule,
-            'rating': rating,
-            'category_main': category_main,
-            'category_all': category_all,
-            'licenses': licenses,
-            'avatar': avatar,
-            'clinic_photo': clinic_photo,
-            'chief_physician': chief_physician,
-            'site': site,
-            'vk': vk,
-            'youtube': youtube,
-            'doctors': doctors,
-            'services': services,
-            'reviews': reviews,
-            }
-
-    return data
+        print(response_text)
+        pass
 
 
 def multiprocess(link: str):

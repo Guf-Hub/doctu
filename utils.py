@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import csv
 import json
 import math
 import os
+import shutil
 import time
 from datetime import datetime
 
@@ -17,6 +19,12 @@ headers = {"Content-Type": "application/json;charset=utf-8",
            }
 
 cards_data = []
+
+
+def write_csv(file_name: str, row):
+    with open(file_name, 'a', newline='\n', encoding='utf-8') as file:
+        writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL, delimiter=',')
+        writer.writerow([row])
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -75,7 +83,10 @@ def get_text(link: str) -> str:
         session = set_session()
         req = session.get(url=link, timeout=100, allow_redirects=True, headers=headers)
         if 200 <= req.status_code <= 299:
+            time.sleep(0.5)
             return req.text.replace(u'\xa0', ' ').replace(u'\u202F', ' ')
+        else:
+            print(f'\r[WARNING]: ', f'{link} {req.status_code}', ' ', end='')
     except requests.exceptions.ReadTimeout:
         print('\n Подключение к серверу........ \n')
         time.sleep(5)
@@ -110,3 +121,25 @@ def links_count(link: str, card_in_page: int = 20, doctors: bool = False, doc_js
     except requests.exceptions.ReadTimeout:
         print('\n Подключение к серверу........ \n')
         time.sleep(5)
+
+
+def split(path: str, file: str, divide: int = 1000):
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+        except FileExistsError as error:
+            print(f'{path} > {error}')
+
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError as error:
+            print(f'{path} > {error}')
+
+    csv_file = open(file, 'r').readlines()
+    filename = 1
+
+    for i in range(len(csv_file)):
+        if i % divide == 0:
+            open(f'{path}links_{filename}.txt', 'w+').writelines(csv_file[i:i + divide])
+            filename += 1
